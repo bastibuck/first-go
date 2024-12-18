@@ -4,12 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"first-go/db"
+	"first-go/routes/middleware"
 	eventTypes "first-go/types/event"
+	"first-go/utils"
 	"fmt"
 	"net/http"
-	"strconv"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type EventHandler struct {
@@ -38,7 +37,7 @@ func (eventHandler *EventHandler) GetAll(res http.ResponseWriter, req *http.Requ
 func (eventHandler *EventHandler) GetById(res http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 
-	eventId, ok := extractEventID(res, req)
+	eventId, ok := utils.ExtractEventID(res, req)
 	if !ok {
 		return
 	}
@@ -64,6 +63,8 @@ func (eventHandler *EventHandler) Create(res http.ResponseWriter, req *http.Requ
 
 	ctx := req.Context()
 
+	user := middleware.User(ctx)
+
 	err := json.NewDecoder(req.Body).Decode(&createEvent)
 	if err != nil {
 		fmt.Println(err)
@@ -71,7 +72,7 @@ func (eventHandler *EventHandler) Create(res http.ResponseWriter, req *http.Requ
 		return
 	}
 
-	err = eventHandler.eventStore.AddEvent(ctx, &createEvent)
+	err = eventHandler.eventStore.AddEvent(ctx, &createEvent, user.ID)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(res, "Something went wrong in Events/Create", http.StatusInternalServerError)
@@ -86,7 +87,7 @@ func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Requ
 
 	ctx := req.Context()
 
-	eventId, ok := extractEventID(res, req)
+	eventId, ok := utils.ExtractEventID(res, req)
 	if !ok {
 		return
 	}
@@ -117,7 +118,7 @@ func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Requ
 func (eventHandler *EventHandler) DeleteById(res http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 
-	eventId, ok := extractEventID(res, req)
+	eventId, ok := utils.ExtractEventID(res, req)
 	if !ok {
 		return
 	}
@@ -136,22 +137,4 @@ func (eventHandler *EventHandler) DeleteById(res http.ResponseWriter, req *http.
 	}
 
 	res.WriteHeader(http.StatusNoContent)
-}
-
-// Utils
-
-func extractEventID(res http.ResponseWriter, req *http.Request) (int, bool) {
-	idStr := chi.URLParam(req, "id")
-	id, err := strconv.Atoi(idStr)
-
-	fmt.Println(id)
-
-	ok := true
-
-	if err != nil {
-		http.Error(res, "Invalid event ID", http.StatusBadRequest)
-		ok = false
-	}
-
-	return id, ok
 }

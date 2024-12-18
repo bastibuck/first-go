@@ -16,8 +16,8 @@ func SetupEventRoutes(eventHandler *api.EventHandler) *chi.Mux {
 
 	// protected routes
 	router.With(middleware.UserAuthentication).Post("/", eventHandler.Create)
-	router.With(middleware.UserAuthentication).Put("/{id}", eventHandler.Update)
-	router.With(middleware.UserAuthentication).Delete("/{id}", eventHandler.DeleteById)
+	router.With(middleware.UserAuthentication).With(middleware.EventProtection).Put("/{id}", eventHandler.Update)
+	router.With(middleware.UserAuthentication).With(middleware.EventProtection).Delete("/{id}", eventHandler.DeleteById)
 
 	return router
 }

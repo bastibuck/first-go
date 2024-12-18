@@ -4,14 +4,13 @@ import (
 	"context"
 	"database/sql"
 
-	"first-go/routes/middleware"
 	eventTypes "first-go/types/event"
 )
 
 type EventStore interface {
 	GetAll(ctx context.Context) ([]eventTypes.EventResponse, error)
 	GetById(ctx context.Context, id int) (*eventTypes.EventResponse, error)
-	AddEvent(ctx context.Context, event *eventTypes.EventPayloadUpsert) error
+	AddEvent(ctx context.Context, event *eventTypes.EventPayloadUpsert, userID int) error
 	UpdateEvent(ctx context.Context, id int, event *eventTypes.EventPayloadUpsert) error
 	DeleteById(ctx context.Context, id int) error
 }
@@ -74,17 +73,15 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id int) (*eventTyp
 	return &event, nil
 }
 
-func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *eventTypes.EventPayloadUpsert) error {
+func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *eventTypes.EventPayloadUpsert, userID int) error {
 	insertEventSQL := `INSERT INTO events(name, date, description, user_id) VALUES (?, ?, ?, ?)`
-
-	user := middleware.User(ctx)
 
 	statement, err := store.db.Prepare(insertEventSQL)
 	if err != nil {
 		return err
 	}
 
-	_, err = statement.ExecContext(ctx, event.Name, event.Date, event.Description, user.ID)
+	_, err = statement.ExecContext(ctx, event.Name, event.Date, event.Description, userID)
 
 	return err
 }
