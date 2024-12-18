@@ -12,6 +12,7 @@ func SetupEventRoutes(eventHandler *api.EventHandler) *chi.Mux {
 	router.Get("/", eventHandler.GetAll)
 	router.Get("/{id}", eventHandler.GetById)
 	router.Post("/", eventHandler.Create)
+	router.Delete("/{id}", eventHandler.DeleteById)
 
 	return router
 }

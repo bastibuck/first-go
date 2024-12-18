@@ -82,3 +82,29 @@ func (eventHandler *EventHandler) Create(res http.ResponseWriter, req *http.Requ
 
 	res.WriteHeader(http.StatusCreated)
 }
+
+func (eventHandler *EventHandler) DeleteById(res http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+
+	idStr := chi.URLParam(req, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(res, "Invalid event ID", http.StatusBadRequest)
+		return
+	}
+
+	err = eventHandler.eventStore.DeleteById(ctx, id)
+	if err != nil {
+		fmt.Println(err)
+
+		if err == sql.ErrNoRows {
+			http.Error(res, "Event not found", http.StatusNotFound)
+			return
+		}
+
+		http.Error(res, "Something went wrong in Events/DeleteById", http.StatusInternalServerError)
+		return
+	}
+
+	res.WriteHeader(http.StatusNoContent)
+}

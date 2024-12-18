@@ -11,6 +11,7 @@ type EventStore interface {
 	GetAll(ctx context.Context) ([]types.EventResponse, error)
 	GetById(ctx context.Context, id int) (*types.EventResponse, error)
 	AddEvent(ctx context.Context, event *types.CreateEvent) error
+	DeleteById(ctx context.Context, id int) error
 }
 
 type DatabaseEventStore struct {
@@ -79,7 +80,32 @@ func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *types.Crea
 		return err
 	}
 
-	_, err = statement.Exec(event.Name, event.Date, event.Description)
+	_, err = statement.ExecContext(ctx, event.Name, event.Date, event.Description)
 
 	return err
+}
+
+func (store *DatabaseEventStore) DeleteById(ctx context.Context, id int) error {
+	deleteEventSQL := `DELETE FROM events WHERE id = ?`
+
+	statement, err := store.db.Prepare(deleteEventSQL)
+	if err != nil {
+		return err
+	}
+
+	result, err := statement.ExecContext(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
