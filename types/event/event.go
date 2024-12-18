@@ -7,6 +7,7 @@ type EventResponse struct {
 	Name        string    `json:"name"`
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
+	UserID      int       `json:"user_id"` // TODO: map to user at some point
 }
 
 type EventPayloadUpsert struct {

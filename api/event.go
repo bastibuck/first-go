@@ -1,7 +1,6 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
 	"first-go/db"
 	"first-go/routes/middleware"
@@ -45,12 +44,6 @@ func (eventHandler *EventHandler) GetById(res http.ResponseWriter, req *http.Req
 	event, err := eventHandler.eventStore.GetById(ctx, eventId)
 	if err != nil {
 		fmt.Println(err)
-
-		if err == sql.ErrNoRows {
-			http.Error(res, "Event not found", http.StatusNotFound)
-			return
-		}
-
 		http.Error(res, "Something went wrong in Events/GetById", http.StatusInternalServerError)
 		return
 	}
@@ -102,12 +95,6 @@ func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Requ
 	err = eventHandler.eventStore.UpdateEvent(ctx, eventId, &updateEvent)
 	if err != nil {
 		fmt.Println(err)
-
-		if err == sql.ErrNoRows {
-			http.Error(res, "Event not found", http.StatusNotFound)
-			return
-		}
-
 		http.Error(res, "Something went wrong in Events/Update", http.StatusInternalServerError)
 		return
 	}
@@ -126,12 +113,6 @@ func (eventHandler *EventHandler) DeleteById(res http.ResponseWriter, req *http.
 	err := eventHandler.eventStore.DeleteById(ctx, eventId)
 	if err != nil {
 		fmt.Println(err)
-
-		if err == sql.ErrNoRows {
-			http.Error(res, "Event not found", http.StatusNotFound)
-			return
-		}
-
 		http.Error(res, "Something went wrong in Events/DeleteById", http.StatusInternalServerError)
 		return
 	}

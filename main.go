@@ -30,7 +30,7 @@ func main() {
 		res.Write([]byte("Welcome to the Event Management API"))
 	})
 
-	router.Mount("/events", routes.SetupEventRoutes(eventHandler))
+	router.Mount("/events", routes.SetupEventRoutes(eventHandler, eventStore))
 	router.Mount("/user", routes.SetupUserRoutes(userHandler))
 
 	// Start the server
