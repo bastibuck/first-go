@@ -67,14 +67,14 @@ func (eventHandler *EventHandler) Create(res http.ResponseWriter, req *http.Requ
 	err := json.NewDecoder(req.Body).Decode(&createEvent)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(res, "Something went wrong in Events/Create", http.StatusBadRequest)
+		http.Error(res, "Something went wrong in Events/Create", http.StatusInternalServerError)
 		return
 	}
 
 	err = eventHandler.eventStore.AddEvent(ctx, &createEvent)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(res, "Something went wrong in Events/Create", http.StatusBadRequest)
+		http.Error(res, "Something went wrong in Events/Create", http.StatusInternalServerError)
 		return
 	}
 
@@ -94,7 +94,7 @@ func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Requ
 	err := json.NewDecoder(req.Body).Decode(&updateEvent)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(res, "Something went wrong in Events/Update", http.StatusBadRequest)
+		http.Error(res, "Something went wrong in Events/Update", http.StatusInternalServerError)
 		return
 	}
 
@@ -107,7 +107,7 @@ func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Requ
 			return
 		}
 
-		http.Error(res, "Something went wrong in Events/Update", http.StatusBadRequest)
+		http.Error(res, "Something went wrong in Events/Update", http.StatusInternalServerError)
 		return
 	}
 

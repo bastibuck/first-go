@@ -13,7 +13,6 @@ import (
 func OpenConnection() *sql.DB {
 	// Open a database connection
 	db, err := sql.Open("sqlite3", ":memory:")
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,12 +22,19 @@ func OpenConnection() *sql.DB {
 	currentDir := filepath.Dir(currentFilePath)
 
 	eventsSql, err := os.ReadFile(filepath.Join(currentDir, "sql/events.sql"))
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = db.Exec(string(eventsSql))
+	usersSql, err := os.ReadFile(filepath.Join(currentDir, "sql/users.sql"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Combine both SQL strings
+	combinedSql := string(eventsSql) + "\n" + string(usersSql)
+
+	_, err = db.Exec(combinedSql)
 	if err != nil {
 		log.Fatal(err)
 	}
