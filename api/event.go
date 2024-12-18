@@ -38,14 +38,12 @@ func (eventHandler *EventHandler) GetAll(res http.ResponseWriter, req *http.Requ
 func (eventHandler *EventHandler) GetById(res http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 
-	idStr := chi.URLParam(req, "id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(res, "Invalid event ID", http.StatusBadRequest)
+	eventId, ok := extractEventID(res, req)
+	if !ok {
 		return
 	}
 
-	event, err := eventHandler.eventStore.GetById(ctx, id)
+	event, err := eventHandler.eventStore.GetById(ctx, eventId)
 	if err != nil {
 		fmt.Println(err)
 
@@ -88,21 +86,19 @@ func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Requ
 
 	ctx := req.Context()
 
-	idStr := chi.URLParam(req, "id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(res, "Invalid event ID", http.StatusBadRequest)
+	eventId, ok := extractEventID(res, req)
+	if !ok {
 		return
 	}
 
-	err = json.NewDecoder(req.Body).Decode(&updateEvent)
+	err := json.NewDecoder(req.Body).Decode(&updateEvent)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(res, "Something went wrong in Events/Update", http.StatusBadRequest)
 		return
 	}
 
-	err = eventHandler.eventStore.UpdateEvent(ctx, id, &updateEvent)
+	err = eventHandler.eventStore.UpdateEvent(ctx, eventId, &updateEvent)
 	if err != nil {
 		fmt.Println(err)
 
@@ -121,14 +117,12 @@ func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Requ
 func (eventHandler *EventHandler) DeleteById(res http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 
-	idStr := chi.URLParam(req, "id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(res, "Invalid event ID", http.StatusBadRequest)
+	eventId, ok := extractEventID(res, req)
+	if !ok {
 		return
 	}
 
-	err = eventHandler.eventStore.DeleteById(ctx, id)
+	err := eventHandler.eventStore.DeleteById(ctx, eventId)
 	if err != nil {
 		fmt.Println(err)
 
@@ -142,4 +136,22 @@ func (eventHandler *EventHandler) DeleteById(res http.ResponseWriter, req *http.
 	}
 
 	res.WriteHeader(http.StatusNoContent)
+}
+
+// Utils
+
+func extractEventID(res http.ResponseWriter, req *http.Request) (int, bool) {
+	idStr := chi.URLParam(req, "id")
+	id, err := strconv.Atoi(idStr)
+
+	fmt.Println(id)
+
+	ok := true
+
+	if err != nil {
+		http.Error(res, "Invalid event ID", http.StatusBadRequest)
+		ok = false
+	}
+
+	return id, ok
 }
