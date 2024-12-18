@@ -3,12 +3,12 @@ package db
 import (
 	"context"
 	"database/sql"
-	"first-go/types"
+	userTypes "first-go/types/user"
 )
 
 type UserStore interface {
-	Create(ctx context.Context, user *types.User) error
-	GetByEmail(ctx context.Context, email string) (*types.User, error)
+	Create(ctx context.Context, user *userTypes.User) error
+	GetByEmail(ctx context.Context, email string) (*userTypes.User, error)
 }
 
 type DatabaseUserStore struct {
@@ -21,7 +21,7 @@ func NewUserStore(db *sql.DB) *DatabaseUserStore {
 	}
 }
 
-func (store *DatabaseUserStore) Create(ctx context.Context, user *types.User) error {
+func (store *DatabaseUserStore) Create(ctx context.Context, user *userTypes.User) error {
 	insertUserSQL := `
 		INSERT INTO users (email, password_hash)
 		VALUES (?,?)
@@ -37,12 +37,12 @@ func (store *DatabaseUserStore) Create(ctx context.Context, user *types.User) er
 	return err
 }
 
-func (u *DatabaseUserStore) GetByEmail(ctx context.Context, email string) (*types.User, error) {
+func (u *DatabaseUserStore) GetByEmail(ctx context.Context, email string) (*userTypes.User, error) {
 	query := `
 		SELECT id, email, password_hash FROM users WHERE email = ?
 	`
 
-	var user types.User
+	var user userTypes.User
 
 	err := u.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Email, &user.PasswordHash)
 	if err != nil {

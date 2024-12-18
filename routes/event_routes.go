@@ -2,6 +2,7 @@ package routes
 
 import (
 	"first-go/api"
+	"first-go/routes/middleware"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -9,11 +10,14 @@ import (
 func SetupEventRoutes(eventHandler *api.EventHandler) *chi.Mux {
 	router := chi.NewRouter()
 
+	// public routes
 	router.Get("/", eventHandler.GetAll)
 	router.Get("/{id}", eventHandler.GetById)
-	router.Post("/", eventHandler.Create)
-	router.Put("/{id}", eventHandler.Update)
-	router.Delete("/{id}", eventHandler.DeleteById)
+
+	// protected routes
+	router.With(middleware.UserAuthentication).Post("/", eventHandler.Create)
+	router.With(middleware.UserAuthentication).Put("/{id}", eventHandler.Update)
+	router.With(middleware.UserAuthentication).Delete("/{id}", eventHandler.DeleteById)
 
 	return router
 }

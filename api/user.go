@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 	"first-go/db"
-	"first-go/types"
+	userTypes "first-go/types/user"
 	"fmt"
 	"net/http"
 )
@@ -18,8 +18,8 @@ type LoginPayload struct {
 }
 
 type LoginResponse struct {
-	User  *types.User `json:"user"`
-	Token string      `json:"token"`
+	User  *userTypes.User `json:"user"`
+	Token string          `json:"token"`
 }
 
 func NewUserHandler(userStore db.UserStore) *UserHandler {
@@ -29,7 +29,7 @@ func NewUserHandler(userStore db.UserStore) *UserHandler {
 }
 
 func (userHandler *UserHandler) RegisterUser(res http.ResponseWriter, req *http.Request) {
-	var createUser types.NewUserPayload
+	var createUser userTypes.NewUserPayload
 
 	ctx := req.Context()
 
@@ -40,7 +40,7 @@ func (userHandler *UserHandler) RegisterUser(res http.ResponseWriter, req *http.
 		return
 	}
 
-	user, err := types.NewUser(createUser)
+	user, err := userTypes.NewUser(createUser)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(res, "Something went wrong in Users/Create", http.StatusInternalServerError)
@@ -75,12 +75,12 @@ func (userHandler *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if !types.ValidatePassword(user.PasswordHash, loginParams.Password) {
+	if !userTypes.ValidatePassword(user.PasswordHash, loginParams.Password) {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
-	token, err := types.CreateToken(*user)
+	token, err := userTypes.CreateToken(*user)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Invalid credentials", http.StatusInternalServerError)

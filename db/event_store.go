@@ -4,14 +4,14 @@ import (
 	"context"
 	"database/sql"
 
-	"first-go/types"
+	eventTypes "first-go/types/event"
 )
 
 type EventStore interface {
-	GetAll(ctx context.Context) ([]types.EventResponse, error)
-	GetById(ctx context.Context, id int) (*types.EventResponse, error)
-	AddEvent(ctx context.Context, event *types.EventPayloadUpsert) error
-	UpdateEvent(ctx context.Context, id int, event *types.EventPayloadUpsert) error
+	GetAll(ctx context.Context) ([]eventTypes.EventResponse, error)
+	GetById(ctx context.Context, id int) (*eventTypes.EventResponse, error)
+	AddEvent(ctx context.Context, event *eventTypes.EventPayloadUpsert) error
+	UpdateEvent(ctx context.Context, id int, event *eventTypes.EventPayloadUpsert) error
 	DeleteById(ctx context.Context, id int) error
 }
 
@@ -33,7 +33,7 @@ func NewEventStore(db *sql.DB) *DatabaseEventStore {
 // Functions to interact with event in the database
 // -----------------
 
-func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]types.EventResponse, error) {
+func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]eventTypes.EventResponse, error) {
 	query := `SELECT id, name, date, description FROM events ORDER BY date DESC`
 
 	rows, err := store.db.QueryContext(ctx, query)
@@ -42,10 +42,10 @@ func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]types.EventRespo
 	}
 	defer rows.Close()
 
-	events := []types.EventResponse{}
+	events := []eventTypes.EventResponse{}
 
 	for rows.Next() {
-		var event types.EventResponse
+		var event eventTypes.EventResponse
 
 		err := rows.Scan(&event.ID, &event.Name, &event.Date, &event.Description)
 		if err != nil {
@@ -58,12 +58,12 @@ func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]types.EventRespo
 	return events, nil
 }
 
-func (store *DatabaseEventStore) GetById(ctx context.Context, id int) (*types.EventResponse, error) {
+func (store *DatabaseEventStore) GetById(ctx context.Context, id int) (*eventTypes.EventResponse, error) {
 	query := `SELECT id, name, date, description FROM events WHERE id = ?`
 
 	row := store.db.QueryRowContext(ctx, query, id)
 
-	var event types.EventResponse
+	var event eventTypes.EventResponse
 
 	err := row.Scan(&event.ID, &event.Name, &event.Date, &event.Description)
 	if err != nil {
@@ -73,7 +73,7 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id int) (*types.Ev
 	return &event, nil
 }
 
-func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *types.EventPayloadUpsert) error {
+func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *eventTypes.EventPayloadUpsert) error {
 	insertEventSQL := `INSERT INTO events(name, date, description) VALUES (?, ?, ?)`
 
 	statement, err := store.db.Prepare(insertEventSQL)
@@ -86,7 +86,7 @@ func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *types.Even
 	return err
 }
 
-func (store *DatabaseEventStore) UpdateEvent(ctx context.Context, id int, event *types.EventPayloadUpsert) error {
+func (store *DatabaseEventStore) UpdateEvent(ctx context.Context, id int, event *eventTypes.EventPayloadUpsert) error {
 	updateEventSQL := `UPDATE events SET name = ?, date = ?, description = ? WHERE id = ?`
 
 	statement, err := store.db.Prepare(updateEventSQL)

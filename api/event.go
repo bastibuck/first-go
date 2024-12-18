@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"first-go/db"
-	"first-go/types"
+	eventTypes "first-go/types/event"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -60,7 +60,7 @@ func (eventHandler *EventHandler) GetById(res http.ResponseWriter, req *http.Req
 }
 
 func (eventHandler *EventHandler) Create(res http.ResponseWriter, req *http.Request) {
-	var createEvent types.EventPayloadUpsert
+	var createEvent eventTypes.EventPayloadUpsert
 
 	ctx := req.Context()
 
@@ -82,7 +82,7 @@ func (eventHandler *EventHandler) Create(res http.ResponseWriter, req *http.Requ
 }
 
 func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Request) {
-	var updateEvent types.EventPayloadUpsert
+	var updateEvent eventTypes.EventPayloadUpsert
 
 	ctx := req.Context()
 
