@@ -33,7 +33,7 @@ func OpenConnection() *sql.DB {
 		log.Fatal(err)
 	}
 
-	log.Default().Println("Database connection established and tables prepared")
+	log.Println("Database connection established and tables prepared")
 
 	return db
 }

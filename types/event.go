@@ -9,7 +9,7 @@ type EventResponse struct {
 	Description string    `json:"description"`
 }
 
-type CreateEvent struct {
+type EventPayloadUpsert struct {
 	Name        string    `json:"name"`
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`

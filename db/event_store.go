@@ -10,7 +10,8 @@ import (
 type EventStore interface {
 	GetAll(ctx context.Context) ([]types.EventResponse, error)
 	GetById(ctx context.Context, id int) (*types.EventResponse, error)
-	AddEvent(ctx context.Context, event *types.CreateEvent) error
+	AddEvent(ctx context.Context, event *types.EventPayloadUpsert) error
+	UpdateEvent(ctx context.Context, id int, event *types.EventPayloadUpsert) error
 	DeleteById(ctx context.Context, id int) error
 }
 
@@ -72,7 +73,7 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id int) (*types.Ev
 	return &event, nil
 }
 
-func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *types.CreateEvent) error {
+func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *types.EventPayloadUpsert) error {
 	insertEventSQL := `INSERT INTO events(name, date, description) VALUES (?, ?, ?)`
 
 	statement, err := store.db.Prepare(insertEventSQL)
@@ -83,6 +84,31 @@ func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *types.Crea
 	_, err = statement.ExecContext(ctx, event.Name, event.Date, event.Description)
 
 	return err
+}
+
+func (store *DatabaseEventStore) UpdateEvent(ctx context.Context, id int, event *types.EventPayloadUpsert) error {
+	updateEventSQL := `UPDATE events SET name = ?, date = ?, description = ? WHERE id = ?`
+
+	statement, err := store.db.Prepare(updateEventSQL)
+	if err != nil {
+		return err
+	}
+
+	result, err := statement.ExecContext(ctx, event.Name, event.Date, event.Description, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
 
 func (store *DatabaseEventStore) DeleteById(ctx context.Context, id int) error {
