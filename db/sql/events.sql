@@ -1,10 +1,11 @@
 CREATE TABLE events (
     "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,		
-    "name" TEXT,
-    "date" TIMESTAMP,
-    "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "description" TEXT
+    "name" TEXT NOT NULL,
+    "date" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "description" TEXT NOT NULL,
+    "user_id" integer NOT NULL
 );
 
 
