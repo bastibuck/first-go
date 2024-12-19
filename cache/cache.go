@@ -20,7 +20,7 @@ var cache = Cache{
 }
 
 func DefaultExpiration() time.Time {
-	return time.Now().Add(time.Hour * 24)
+	return time.Now().Add(time.Hour * 1)
 }
 
 func Set(key string, value any, expires time.Time) {
