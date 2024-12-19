@@ -2,8 +2,10 @@ package db
 
 import (
 	"context"
-	"database/sql"
+	"first-go/db/entities"
 	userTypes "first-go/types/user"
+
+	"gorm.io/gorm"
 )
 
 type UserStore interface {
@@ -12,42 +14,43 @@ type UserStore interface {
 }
 
 type DatabaseUserStore struct {
-	db *sql.DB
+	db *gorm.DB
 }
 
-func NewUserStore(db *sql.DB) *DatabaseUserStore {
+func NewUserStore(db *gorm.DB) *DatabaseUserStore {
 	return &DatabaseUserStore{
 		db,
 	}
 }
 
 func (store *DatabaseUserStore) Create(ctx context.Context, user *userTypes.User) error {
-	insertUserSQL := `
-		INSERT INTO users (email, password_hash)
-		VALUES (?,?)
-	`
-
-	statement, err := store.db.Prepare(insertUserSQL)
-	if err != nil {
-		return err
+	var newUser = entities.Users{
+		Email:         user.Email,
+		Password_Hash: user.PasswordHash,
 	}
 
-	_, err = statement.ExecContext(ctx, user.Email, user.PasswordHash)
+	result := store.db.WithContext(ctx).Create(&newUser)
 
-	return err
+	return result.Error
 }
 
-func (u *DatabaseUserStore) GetByEmail(ctx context.Context, email string) (*userTypes.User, error) {
-	query := `
-		SELECT id, email, password_hash FROM users WHERE email = ?
-	`
-
-	var user userTypes.User
-
-	err := u.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Email, &user.PasswordHash)
-	if err != nil {
-		return nil, err
+func (store *DatabaseUserStore) GetByEmail(ctx context.Context, email string) (*userTypes.User, error) {
+	var user = entities.Users{
+		Email: email,
 	}
 
-	return &user, nil
+	result := store.db.WithContext(ctx).First(&user)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	userResponse := userTypes.User{
+		ID:           user.ID,
+		Email:        user.Email,
+		PasswordHash: user.Password_Hash,
+	}
+
+	return &userResponse, nil
+
 }

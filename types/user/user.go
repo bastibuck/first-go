@@ -9,7 +9,7 @@ import (
 )
 
 type User struct {
-	ID           int    `json:"id"`
+	ID           uint   `json:"id"`
 	Email        string `json:"email"`
 	PasswordHash string `json:"-"` // - omits the output when reading
 }

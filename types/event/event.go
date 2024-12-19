@@ -6,7 +6,7 @@ import (
 )
 
 type EventResponse struct {
-	ID          int            `json:"id"`
+	ID          uint           `json:"id"`
 	Name        string         `json:"name"`
 	Date        time.Time      `json:"date"`
 	Description string         `json:"description"`

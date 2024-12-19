@@ -60,7 +60,7 @@ func UserAuthentication(next http.Handler) http.Handler {
 		var user userTypes.User
 
 		user.Email = claims["email"].(string)
-		user.ID = int(claims["id"].(float64))
+		user.ID = uint(claims["id"].(float64))
 
 		ctx := req.Context()
 		ctx = WithUser(ctx, &user)

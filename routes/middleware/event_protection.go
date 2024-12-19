@@ -1,11 +1,12 @@
 package middleware
 
 import (
-	"database/sql"
 	"first-go/db"
 	"first-go/utils"
 	"fmt"
 	"net/http"
+
+	"gorm.io/gorm"
 )
 
 func EventExistence(eventStore db.EventStore) func(http.Handler) http.Handler {
@@ -22,7 +23,7 @@ func EventExistence(eventStore db.EventStore) func(http.Handler) http.Handler {
 			if err != nil {
 				fmt.Println(err)
 
-				if err == sql.ErrNoRows {
+				if err == gorm.ErrRecordNotFound {
 					http.Error(res, "Event not found", http.StatusNotFound)
 					return
 				}

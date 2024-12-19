@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func ExtractEventID(res http.ResponseWriter, req *http.Request) (int, bool) {
+func ExtractEventID(res http.ResponseWriter, req *http.Request) (uint, bool) {
 	idStr := chi.URLParam(req, "id")
 	id, err := strconv.Atoi(idStr)
 
@@ -18,5 +18,5 @@ func ExtractEventID(res http.ResponseWriter, req *http.Request) (int, bool) {
 		ok = false
 	}
 
-	return id, ok
+	return uint(id), ok
 }

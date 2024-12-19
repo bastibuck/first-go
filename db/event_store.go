@@ -2,28 +2,32 @@ package db
 
 import (
 	"context"
-	"database/sql"
+	"time"
 
+	"first-go/db/entities"
 	eventTypes "first-go/types/event"
+	userTypes "first-go/types/user"
+
+	"gorm.io/gorm"
 )
 
 type EventStore interface {
 	GetAll(ctx context.Context) ([]eventTypes.EventResponse, error)
-	GetById(ctx context.Context, id int) (*eventTypes.EventResponse, error)
-	AddEvent(ctx context.Context, event *eventTypes.EventPayloadUpsert, userID int) error
-	UpdateEvent(ctx context.Context, id int, event *eventTypes.EventPayloadUpsert) error
-	DeleteById(ctx context.Context, id int) error
+	GetById(ctx context.Context, id uint) (*eventTypes.EventResponse, error)
+	AddEvent(ctx context.Context, event *eventTypes.EventPayloadUpsert, userID uint) error
+	UpdateEvent(ctx context.Context, id uint, event *eventTypes.EventPayloadUpsert) error
+	DeleteById(ctx context.Context, id uint) error
 }
 
 type DatabaseEventStore struct {
-	db *sql.DB
+	db *gorm.DB
 }
 
 // -----------------
 // Constructor for EventStore
 // -----------------
 
-func NewEventStore(db *sql.DB) *DatabaseEventStore {
+func NewEventStore(db *gorm.DB) *DatabaseEventStore {
 	return &DatabaseEventStore{
 		db,
 	}
@@ -34,114 +38,109 @@ func NewEventStore(db *sql.DB) *DatabaseEventStore {
 // -----------------
 
 func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]eventTypes.EventResponse, error) {
-	query := `
-		SELECT e.id, e.name, e.date, e.description, u.id, u.email
+	var eventsResult []struct {
+		ID          uint      `json:"id"`
+		Name        string    `json:"name"`
+		Date        time.Time `json:"date"`
+		Description string    `json:"description"`
+		UserID      uint      `json:"user_id"`
+		UserEmail   string    `json:"user_email"`
+	}
+
+	result := store.db.WithContext(ctx).Raw(`
+		SELECT e.id, e.name, e.date, e.description, u.id as user_id, u.email as user_email
 		FROM events e
 		JOIN users u ON e.user_id = u.id
 		ORDER BY e.date DESC
-	`
+	`).Scan(&eventsResult)
 
-	rows, err := store.db.QueryContext(ctx, query)
-	if err != nil {
-		return nil, err
+	if result.Error != nil {
+		return nil, result.Error
 	}
-	defer rows.Close()
 
-	events := []eventTypes.EventResponse{}
+	events := make([]eventTypes.EventResponse, len(eventsResult))
 
-	for rows.Next() {
-		var event eventTypes.EventResponse
-
-		err := rows.Scan(&event.ID, &event.Name, &event.Date, &event.Description, &event.User.ID, &event.User.Email)
-		if err != nil {
-			return nil, err
+	for event := range events {
+		events[event] = eventTypes.EventResponse{
+			ID:          eventsResult[event].ID,
+			Name:        eventsResult[event].Name,
+			Date:        eventsResult[event].Date,
+			Description: eventsResult[event].Description,
+			User: userTypes.User{
+				ID:    eventsResult[event].UserID,
+				Email: eventsResult[event].UserEmail,
+			},
 		}
-
-		events = append(events, event)
 	}
 
 	return events, nil
 }
 
-func (store *DatabaseEventStore) GetById(ctx context.Context, id int) (*eventTypes.EventResponse, error) {
-	query := `
-		SELECT e.id, e.name, e.date, e.description, u.id, u.email
+func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTypes.EventResponse, error) {
+	var eventsResult struct {
+		ID          uint      `json:"id"`
+		Name        string    `json:"name"`
+		Date        time.Time `json:"date"`
+		Description string    `json:"description"`
+		UserID      uint      `json:"user_id"`
+		UserEmail   string    `json:"user_email"`
+	}
+
+	result := store.db.WithContext(ctx).Raw(`
+		SELECT e.id, e.name, e.date, e.description, u.id as user_id, u.email as user_email
 		FROM events e
 		JOIN users u ON e.user_id = u.id
-		WHERE e.id = ?
-	`
+		ORDER BY e.date DESC
+		LIMIT 1
+	`).Scan(&eventsResult)
 
-	row := store.db.QueryRowContext(ctx, query, id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
 
-	var event eventTypes.EventResponse
-
-	err := row.Scan(&event.ID, &event.Name, &event.Date, &event.Description, &event.User.ID, &event.User.Email)
-	if err != nil {
-		return nil, err
+	event := eventTypes.EventResponse{
+		ID:          eventsResult.ID,
+		Name:        eventsResult.Name,
+		Description: eventsResult.Description,
+		Date:        eventsResult.Date,
+		User: userTypes.User{
+			ID:    eventsResult.UserID,
+			Email: eventsResult.UserEmail,
+		},
 	}
 
 	return &event, nil
 }
 
-func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *eventTypes.EventPayloadUpsert, userID int) error {
-	insertEventSQL := `INSERT INTO events(name, date, description, user_id) VALUES (?, ?, ?, ?)`
-
-	statement, err := store.db.Prepare(insertEventSQL)
-	if err != nil {
-		return err
+func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *eventTypes.EventPayloadUpsert, userID uint) error {
+	var newEvent = entities.Events{
+		Name:        event.Name,
+		Date:        event.Date,
+		Description: event.Description,
+		UserID:      userID,
 	}
 
-	_, err = statement.ExecContext(ctx, event.Name, event.Date, event.Description, userID)
+	result := store.db.WithContext(ctx).Create(&newEvent)
 
-	return err
+	return result.Error
 }
 
-func (store *DatabaseEventStore) UpdateEvent(ctx context.Context, id int, event *eventTypes.EventPayloadUpsert) error {
-	updateEventSQL := `UPDATE events SET name = ?, date = ?, description = ? WHERE id = ?`
-
-	statement, err := store.db.Prepare(updateEventSQL)
-	if err != nil {
-		return err
+func (store *DatabaseEventStore) UpdateEvent(ctx context.Context, id uint, event *eventTypes.EventPayloadUpsert) error {
+	var updatedEvent = entities.Events{
+		Name:        event.Name,
+		Date:        event.Date,
+		Description: event.Description,
 	}
 
-	result, err := statement.ExecContext(ctx, event.Name, event.Date, event.Description, id)
-	if err != nil {
-		return err
-	}
+	result := store.db.WithContext(ctx).Model(&updatedEvent).Where("id = ?", id).Updates(&updatedEvent)
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		return sql.ErrNoRows
-	}
-
-	return nil
+	return result.Error
 }
 
-func (store *DatabaseEventStore) DeleteById(ctx context.Context, id int) error {
-	deleteEventSQL := `DELETE FROM events WHERE id = ?`
+func (store *DatabaseEventStore) DeleteById(ctx context.Context, id uint) error {
+	var event entities.Events
 
-	statement, err := store.db.Prepare(deleteEventSQL)
-	if err != nil {
-		return err
-	}
+	result := store.db.WithContext(ctx).Where("id = ?", id).Unscoped().Delete(&event)
 
-	result, err := statement.ExecContext(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		return sql.ErrNoRows
-	}
-
-	return nil
+	return result.Error
 }
