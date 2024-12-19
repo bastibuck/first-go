@@ -2,12 +2,14 @@ package api
 
 import (
 	"encoding/json"
+	"first-go/cache"
 	"first-go/db"
 	"first-go/routes/middleware"
 	eventTypes "first-go/types/event"
 	"first-go/utils"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type EventHandler struct {
@@ -38,12 +40,22 @@ func (eventHandler *EventHandler) GetById(res http.ResponseWriter, req *http.Req
 
 	eventId, _ := utils.ExtractEventID(res, req) // already validated in middleware
 
+	cachedEvent := cache.Get(fmt.Sprintf("event-%d", eventId))
+	if cachedEvent != nil {
+		json.NewEncoder(res).Encode(cachedEvent)
+		return
+	}
+
+	time.Sleep(2 * time.Second) // fake long operation
+
 	event, err := eventHandler.eventStore.GetById(ctx, eventId)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(res, "Something went wrong in Events/GetById", http.StatusInternalServerError)
 		return
 	}
+
+	cache.Set(fmt.Sprintf("event-%d", eventId), event, time.Now().Add(time.Second*30))
 
 	json.NewEncoder(res).Encode(event)
 }
@@ -109,6 +121,8 @@ func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Requ
 		return
 	}
 
+	cache.Invalidate(fmt.Sprintf("event-%d", eventId))
+
 	res.WriteHeader(http.StatusNoContent)
 }
 
@@ -123,6 +137,8 @@ func (eventHandler *EventHandler) DeleteById(res http.ResponseWriter, req *http.
 		http.Error(res, "Something went wrong in Events/DeleteById", http.StatusInternalServerError)
 		return
 	}
+
+	cache.Invalidate(fmt.Sprintf("event-%d", eventId))
 
 	res.WriteHeader(http.StatusNoContent)
 }
