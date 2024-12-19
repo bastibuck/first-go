@@ -1,6 +1,8 @@
 package types
 
-import "time"
+import (
+	"time"
+)
 
 type EventResponse struct {
 	ID          int       `json:"id"`
@@ -11,7 +13,7 @@ type EventResponse struct {
 }
 
 type EventPayloadUpsert struct {
-	Name        string    `json:"name"`
-	Date        time.Time `json:"date"`
-	Description string    `json:"description"`
+	Name        string    `json:"name" validate:"required,min=3"`
+	Date        time.Time `json:"date" validate:"required"` // TODO? how to validate date?
+	Description string    `json:"description" validate:"required,max=255"`
 }

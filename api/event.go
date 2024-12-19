@@ -65,6 +65,14 @@ func (eventHandler *EventHandler) Create(res http.ResponseWriter, req *http.Requ
 		return
 	}
 
+	validate := utils.GetValidator()
+	err = validate.Struct(createEvent)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(res, "Malformed event", http.StatusBadRequest)
+		return
+	}
+
 	err = eventHandler.eventStore.AddEvent(ctx, &createEvent, user.ID)
 	if err != nil {
 		fmt.Println(err)
@@ -89,6 +97,14 @@ func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Requ
 	if err != nil {
 		fmt.Println(err)
 		http.Error(res, "Something went wrong in Events/Update", http.StatusInternalServerError)
+		return
+	}
+
+	validate := utils.GetValidator()
+	err = validate.Struct(updateEvent)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(res, "Malformed event", http.StatusBadRequest)
 		return
 	}
 
