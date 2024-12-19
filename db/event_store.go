@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	eventTypes "first-go/types/event"
 )
@@ -70,6 +71,8 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id int) (*eventTyp
 		JOIN users u ON e.user_id = u.id
 		WHERE e.id = ?
 	`
+
+	time.Sleep(2 * time.Second)
 
 	row := store.db.QueryRowContext(ctx, query, id)
 

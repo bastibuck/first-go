@@ -36,10 +36,7 @@ func (eventHandler *EventHandler) GetAll(res http.ResponseWriter, req *http.Requ
 func (eventHandler *EventHandler) GetById(res http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 
-	eventId, ok := utils.ExtractEventID(res, req)
-	if !ok {
-		return
-	}
+	eventId, _ := utils.ExtractEventID(res, req) // already validated in middleware
 
 	event, err := eventHandler.eventStore.GetById(ctx, eventId)
 	if err != nil {
@@ -88,10 +85,7 @@ func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Requ
 
 	ctx := req.Context()
 
-	eventId, ok := utils.ExtractEventID(res, req)
-	if !ok {
-		return
-	}
+	eventId, _ := utils.ExtractEventID(res, req) // already validated in middleware
 
 	err := json.NewDecoder(req.Body).Decode(&updateEvent)
 	if err != nil {
@@ -121,10 +115,7 @@ func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Requ
 func (eventHandler *EventHandler) DeleteById(res http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 
-	eventId, ok := utils.ExtractEventID(res, req)
-	if !ok {
-		return
-	}
+	eventId, _ := utils.ExtractEventID(res, req) // already validated in middleware
 
 	err := eventHandler.eventStore.DeleteById(ctx, eventId)
 	if err != nil {
