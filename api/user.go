@@ -30,7 +30,7 @@ func NewUserHandler(userStore db.UserStore) *UserHandler {
 }
 
 func (userHandler *UserHandler) RegisterUser(res http.ResponseWriter, req *http.Request) {
-	var createUser userTypes.NewUserPayload
+	var createUser userTypes.RegisterPayload
 
 	ctx := req.Context()
 

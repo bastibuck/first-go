@@ -14,12 +14,12 @@ type User struct {
 	PasswordHash string `json:"-"` // - omits the output when reading
 }
 
-type NewUserPayload struct {
+type RegisterPayload struct {
 	Email    string `validate:"required,email"`
 	Password string `validate:"required,min=8"`
 }
 
-func NewUser(createUser NewUserPayload) (*User, error) {
+func NewUser(createUser RegisterPayload) (*User, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(createUser.Password), 14)
 
 	if err != nil {
