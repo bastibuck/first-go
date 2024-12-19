@@ -1,15 +1,16 @@
 package types
 
 import (
+	userTypes "first-go/types/user"
 	"time"
 )
 
 type EventResponse struct {
-	ID          int       `json:"id"`
-	Name        string    `json:"name"`
-	Date        time.Time `json:"date"`
-	Description string    `json:"description"`
-	UserID      int       `json:"user_id"` // TODO: map to user at some point
+	ID          int            `json:"id"`
+	Name        string         `json:"name"`
+	Date        time.Time      `json:"date"`
+	Description string         `json:"description"`
+	User        userTypes.User `json:"user"`
 }
 
 type EventPayloadUpsert struct {

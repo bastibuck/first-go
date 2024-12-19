@@ -34,7 +34,12 @@ func NewEventStore(db *sql.DB) *DatabaseEventStore {
 // -----------------
 
 func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]eventTypes.EventResponse, error) {
-	query := `SELECT id, name, date, description, user_id FROM events ORDER BY date DESC`
+	query := `
+		SELECT e.id, e.name, e.date, e.description, u.id, u.email
+		FROM events e
+		JOIN users u ON e.user_id = u.id
+		ORDER BY e.date DESC
+	`
 
 	rows, err := store.db.QueryContext(ctx, query)
 	if err != nil {
@@ -47,7 +52,7 @@ func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]eventTypes.Event
 	for rows.Next() {
 		var event eventTypes.EventResponse
 
-		err := rows.Scan(&event.ID, &event.Name, &event.Date, &event.Description, &event.UserID)
+		err := rows.Scan(&event.ID, &event.Name, &event.Date, &event.Description, &event.User.ID, &event.User.Email)
 		if err != nil {
 			return nil, err
 		}
@@ -59,13 +64,18 @@ func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]eventTypes.Event
 }
 
 func (store *DatabaseEventStore) GetById(ctx context.Context, id int) (*eventTypes.EventResponse, error) {
-	query := `SELECT id, name, date, description, user_id FROM events WHERE id = ?`
+	query := `
+		SELECT e.id, e.name, e.date, e.description, u.id, u.email
+		FROM events e
+		JOIN users u ON e.user_id = u.id
+		WHERE e.id = ?
+	`
 
 	row := store.db.QueryRowContext(ctx, query, id)
 
 	var event eventTypes.EventResponse
 
-	err := row.Scan(&event.ID, &event.Name, &event.Date, &event.Description, &event.UserID)
+	err := row.Scan(&event.ID, &event.Name, &event.Date, &event.Description, &event.User.ID, &event.User.Email)
 	if err != nil {
 		return nil, err
 	}
