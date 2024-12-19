@@ -15,8 +15,8 @@ type User struct {
 }
 
 type NewUserPayload struct {
-	Email    string
-	Password string
+	Email    string `validate:"required,email"`
+	Password string `validate:"required,min=8"`
 }
 
 func NewUser(createUser NewUserPayload) (*User, error) {

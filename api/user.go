@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"first-go/db"
 	userTypes "first-go/types/user"
+	"first-go/utils"
 	"fmt"
 	"net/http"
 )
@@ -13,8 +14,8 @@ type UserHandler struct {
 }
 
 type LoginPayload struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8"`
 }
 
 type LoginResponse struct {
@@ -40,6 +41,14 @@ func (userHandler *UserHandler) RegisterUser(res http.ResponseWriter, req *http.
 		return
 	}
 
+	validate := utils.GetValidator()
+	err = validate.Struct(createUser)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(res, "Malformed email or password", http.StatusBadRequest)
+		return
+	}
+
 	user, err := userTypes.NewUser(createUser)
 	if err != nil {
 		fmt.Println(err)
@@ -57,33 +66,41 @@ func (userHandler *UserHandler) RegisterUser(res http.ResponseWriter, req *http.
 	res.WriteHeader(http.StatusCreated)
 }
 
-func (userHandler *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
+func (userHandler *UserHandler) LoginUser(res http.ResponseWriter, req *http.Request) {
 	var loginParams LoginPayload
 
-	ctx := r.Context()
+	ctx := req.Context()
 
-	if err := json.NewDecoder(r.Body).Decode(&loginParams); err != nil {
+	if err := json.NewDecoder(req.Body).Decode(&loginParams); err != nil {
 		fmt.Println(err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(res, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	validate := utils.GetValidator()
+	err := validate.Struct(loginParams)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(res, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	user, err := userHandler.userStore.GetByEmail(ctx, loginParams.Email)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		http.Error(res, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
 	if !userTypes.ValidatePassword(user.PasswordHash, loginParams.Password) {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		http.Error(res, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
 	token, err := userTypes.CreateToken(*user)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, "Invalid credentials", http.StatusInternalServerError)
+		http.Error(res, "Invalid credentials", http.StatusInternalServerError)
 		return
 	}
 
@@ -92,12 +109,12 @@ func (userHandler *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request
 		Token: token,
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(response)
+	res.WriteHeader(http.StatusOK)
+	res.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(res).Encode(response)
 
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, "Invalid credentials", http.StatusInternalServerError)
+		http.Error(res, "Invalid credentials", http.StatusInternalServerError)
 	}
 }
