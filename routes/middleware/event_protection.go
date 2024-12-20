@@ -56,7 +56,7 @@ func UserEvent(eventStore db.EventStore) func(http.Handler) http.Handler {
 				return
 			}
 
-			if event.User.ID != user.ID {
+			if event.Author.ID != user.ID {
 				http.Error(res, "Forbidden", http.StatusForbidden)
 				return
 			}

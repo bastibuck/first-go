@@ -18,7 +18,7 @@ type EventResponse struct {
 	Date        time.Time      `json:"date"`
 	Description string         `json:"description"`
 	Pax         int            `json:"pax"`
-	User        userTypes.User `json:"user"`
+	Author      userTypes.User `json:"author"`
 	SignUps     []string       `json:"signups"`
 }
 

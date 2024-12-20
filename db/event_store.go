@@ -84,7 +84,7 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTy
 		Description: eventsResult.Description,
 		Date:        eventsResult.Date,
 		Pax:         eventsResult.Pax,
-		User: userTypes.User{
+		Author: userTypes.User{
 			ID:    eventsResult.UserID,
 			Email: eventsResult.UserEmail,
 		},
