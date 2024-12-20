@@ -12,8 +12,6 @@ type Events struct {
 	Description string
 	Date        time.Time
 	UserID      uint
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
 	Pax         int
 }
 

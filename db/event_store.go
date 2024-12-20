@@ -173,13 +173,11 @@ func (store *DatabaseEventStore) SignUp(ctx context.Context, eventId uint, signU
 		return fmt.Errorf("event-fully-booked")
 	}
 
-	event.Pax--
-
 	err = store.UpdateEvent(ctx, eventId, &eventTypes.EventUpsertPayload{
 		Name:        event.Name,
 		Date:        event.Date,
 		Description: event.Description,
-		Pax:         event.Pax,
+		Pax:         event.Pax - 1,
 	})
 
 	if err != nil {
