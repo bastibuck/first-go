@@ -182,6 +182,17 @@ func (eventHandler *EventHandler) SignUp(res http.ResponseWriter, req *http.Requ
 
 	cache.Invalidate(buildEventCacheKey(eventId))
 
+	event, err := eventHandler.eventStore.GetById(ctx, eventId)
+	if err == nil {
+		broadcast <- WebSocketMessage{
+			Type: EventSignUp,
+			Payload: EventSignUpPayload{
+				EventID: event.ID,
+				NewPax:  event.Pax,
+			},
+		}
+	}
+
 	res.WriteHeader(http.StatusCreated)
 }
 

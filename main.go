@@ -33,6 +33,12 @@ func main() {
 	router.Mount("/events", routes.SetupEventRoutes(eventHandler, eventStore))
 	router.Mount("/user", routes.SetupUserRoutes(userHandler))
 
+	// Start the WebSocket message handler
+	go api.HandleWebSocketMessages()
+
+	// Register WebSocket endpoint
+	router.HandleFunc("/ws", api.HandleWebSocketConnections)
+
 	// Start the server
 	http.ListenAndServe(":8081", router)
 }
