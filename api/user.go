@@ -7,8 +7,6 @@ import (
 	"first-go/utils"
 	"fmt"
 	"net/http"
-
-	"gorm.io/gorm"
 )
 
 type UserHandler struct {
@@ -51,6 +49,12 @@ func (userHandler *UserHandler) RegisterUser(res http.ResponseWriter, req *http.
 		return
 	}
 
+	existingUser, _ := userHandler.userStore.GetByEmail(ctx, createUser.Email)
+	if existingUser != nil {
+		http.Error(res, "Email already exists", http.StatusBadRequest)
+		return
+	}
+
 	user, err := userTypes.NewUser(createUser)
 	if err != nil {
 		fmt.Println(err)
@@ -61,12 +65,6 @@ func (userHandler *UserHandler) RegisterUser(res http.ResponseWriter, req *http.
 	err = userHandler.userStore.Create(ctx, user)
 	if err != nil {
 		fmt.Println(err)
-
-		if err == gorm.ErrDuplicatedKey {
-			http.Error(res, "Email already exists", http.StatusBadRequest)
-			return
-		}
-
 		http.Error(res, "Something went wrong in Users/Create", http.StatusInternalServerError)
 		return
 	}
