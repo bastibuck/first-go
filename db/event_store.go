@@ -71,19 +71,11 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTy
 		return nil, gorm.ErrRecordNotFound
 	}
 
-	var signupsResult []struct {
-		Email string `json:"email"`
-	}
-
-	result = store.db.WithContext(ctx).Model(&entities.EventSignUps{}).Where("event_sign_ups.event_id = ?", id).Select("users.email").Joins("join users on event_sign_ups.user_id = users.id").Scan(&signupsResult)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
 	signupsResponse := []string{}
 
-	for _, signup := range signupsResult {
-		signupsResponse = append(signupsResponse, signup.Email)
+	result = store.db.WithContext(ctx).Model(&entities.EventSignUps{}).Where("event_sign_ups.event_id = ?", id).Select("users.email").Joins("join users on event_sign_ups.user_id = users.id").Scan(&signupsResponse)
+	if result.Error != nil {
+		return nil, result.Error
 	}
 
 	eventResponse := eventTypes.EventResponse{
