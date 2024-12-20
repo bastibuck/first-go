@@ -17,7 +17,6 @@ type Events struct {
 
 type EventSignUps struct {
 	gorm.Model
-	Email   string
-	Name    string
+	UserID  uint
 	EventID uint
 }

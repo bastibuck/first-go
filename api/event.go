@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"first-go/cache"
 	"first-go/db"
+	"first-go/db/entities"
 	"first-go/routes/middleware"
 	eventTypes "first-go/types/event"
 	"first-go/utils"
@@ -144,28 +145,16 @@ func (eventHandler *EventHandler) DeleteById(res http.ResponseWriter, req *http.
 }
 
 func (eventHandler *EventHandler) SignUp(res http.ResponseWriter, req *http.Request) {
-	var signUp eventTypes.EventSignUpPayload
-
 	ctx := req.Context()
 
 	eventId, _ := utils.ExtractEventID(res, req) // already validated in middleware
 
-	err := json.NewDecoder(req.Body).Decode(&signUp)
-	if err != nil {
-		fmt.Println(err)
-		http.Error(res, "Something went wrong in Events/SignUp", http.StatusInternalServerError)
-		return
-	}
+	user := middleware.User(ctx)
 
-	validate := utils.GetValidator()
-	err = validate.Struct(signUp)
-	if err != nil {
-		fmt.Println(err)
-		http.Error(res, "Malformed sign-up", http.StatusBadRequest)
-		return
-	}
-
-	err = eventHandler.eventStore.SignUp(ctx, eventId, &signUp)
+	err := eventHandler.eventStore.SignUp(ctx, eventId, &entities.EventSignUps{
+		UserID:  user.ID,
+		EventID: eventId,
+	})
 	if err != nil {
 		fmt.Println(err)
 

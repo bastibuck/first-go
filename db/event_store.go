@@ -13,12 +13,12 @@ import (
 )
 
 type EventStore interface {
-	GetAll(ctx context.Context) ([]eventTypes.EventResponse, error)
+	GetAll(ctx context.Context) ([]eventTypes.EventListResponse, error)
 	GetById(ctx context.Context, id uint) (*eventTypes.EventResponse, error)
 	AddEvent(ctx context.Context, event *eventTypes.EventUpsertPayload, userID uint) error
 	UpdateEvent(ctx context.Context, id uint, event *eventTypes.EventUpsertPayload) error
 	DeleteById(ctx context.Context, id uint) error
-	SignUp(ctx context.Context, eventId uint, signUp *eventTypes.EventSignUpPayload) error
+	SignUp(ctx context.Context, eventId uint, signUp *entities.EventSignUps) error
 }
 
 type DatabaseEventStore struct {
@@ -39,7 +39,7 @@ func NewEventStore(db *gorm.DB) *DatabaseEventStore {
 // Functions to interact with event in the database
 // -----------------
 
-func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]eventTypes.EventResponse, error) {
+func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]eventTypes.EventListResponse, error) {
 	var eventsResult []struct {
 		ID          uint      `json:"id"`
 		Name        string    `json:"name"`
@@ -61,19 +61,14 @@ func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]eventTypes.Event
 		return nil, result.Error
 	}
 
-	events := make([]eventTypes.EventResponse, len(eventsResult))
+	events := make([]eventTypes.EventListResponse, len(eventsResult))
 
 	for event := range events {
-		events[event] = eventTypes.EventResponse{
-			ID:          eventsResult[event].ID,
-			Name:        eventsResult[event].Name,
-			Date:        eventsResult[event].Date,
-			Description: eventsResult[event].Description,
-			Pax:         eventsResult[event].Pax,
-			User: userTypes.User{
-				ID:    eventsResult[event].UserID,
-				Email: eventsResult[event].UserEmail,
-			},
+		events[event] = eventTypes.EventListResponse{
+			ID:   eventsResult[event].ID,
+			Name: eventsResult[event].Name,
+			Date: eventsResult[event].Date,
+			Pax:  eventsResult[event].Pax,
 		}
 	}
 
@@ -95,9 +90,8 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTy
 		SELECT e.id, e.name, e.date, e.description, e.pax, u.id as user_id, u.email as user_email
 		FROM events e
 		JOIN users u ON e.user_id = u.id
-		ORDER BY e.date DESC
-		LIMIT 1
-	`).Scan(&eventsResult)
+		WHERE e.id = ?
+	`, id).Scan(&eventsResult)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -105,6 +99,26 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTy
 
 	if result.RowsAffected == 0 {
 		return nil, gorm.ErrRecordNotFound
+	}
+
+	var signupsResult []struct {
+		Email string `json:"email"`
+	}
+
+	result = store.db.WithContext(ctx).Raw(`
+		SELECT users.email
+		FROM event_sign_ups
+		JOIN users ON event_sign_ups.user_id = users.id
+		WHERE event_sign_ups.event_id = ?
+	`, id).Scan(&signupsResult)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	signupsResponse := []string{}
+
+	for _, signup := range signupsResult {
+		signupsResponse = append(signupsResponse, signup.Email)
 	}
 
 	event := eventTypes.EventResponse{
@@ -117,6 +131,7 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTy
 			ID:    eventsResult.UserID,
 			Email: eventsResult.UserEmail,
 		},
+		SignUps: signupsResponse,
 	}
 
 	return &event, nil
@@ -165,13 +180,7 @@ func (store *DatabaseEventStore) DeleteById(ctx context.Context, id uint) error 
 	return result.Error
 }
 
-func (store *DatabaseEventStore) SignUp(ctx context.Context, eventId uint, signUp *eventTypes.EventSignUpPayload) error {
-	var newSignUp = entities.EventSignUps{
-		Email:   signUp.Email,
-		Name:    signUp.Name,
-		EventID: eventId,
-	}
-
+func (store *DatabaseEventStore) SignUp(ctx context.Context, eventId uint, signUp *entities.EventSignUps) error {
 	event, err := store.GetById(ctx, eventId)
 	if err != nil {
 		return err
@@ -192,7 +201,7 @@ func (store *DatabaseEventStore) SignUp(ctx context.Context, eventId uint, signU
 		return err
 	}
 
-	result := store.db.WithContext(ctx).Create(&newSignUp)
+	result := store.db.WithContext(ctx).Create(&signUp)
 
 	return result.Error
 }
