@@ -40,36 +40,11 @@ func NewEventStore(db *gorm.DB) *DatabaseEventStore {
 // -----------------
 
 func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]eventTypes.EventListResponse, error) {
-	var eventsResult []struct {
-		ID          uint      `json:"id"`
-		Name        string    `json:"name"`
-		Date        time.Time `json:"date"`
-		Description string    `json:"description"`
-		Pax         int       `json:"pax"`
-		UserID      uint      `json:"user_id"`
-		UserEmail   string    `json:"user_email"`
-	}
+	var events []eventTypes.EventListResponse
 
-	result := store.db.WithContext(ctx).Raw(`
-		SELECT e.id, e.name, e.date, e.description, e.pax, u.id as user_id, u.email as user_email
-		FROM events e
-		JOIN users u ON e.user_id = u.id
-		ORDER BY e.date DESC
-	`).Scan(&eventsResult)
-
+	result := store.db.WithContext(ctx).Table("events").Find(&events).Order("date desc")
 	if result.Error != nil {
 		return nil, result.Error
-	}
-
-	events := make([]eventTypes.EventListResponse, len(eventsResult))
-
-	for event := range events {
-		events[event] = eventTypes.EventListResponse{
-			ID:   eventsResult[event].ID,
-			Name: eventsResult[event].Name,
-			Date: eventsResult[event].Date,
-			Pax:  eventsResult[event].Pax,
-		}
 	}
 
 	return events, nil
