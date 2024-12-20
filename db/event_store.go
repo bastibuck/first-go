@@ -137,14 +137,22 @@ func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *eventTypes
 }
 
 func (store *DatabaseEventStore) UpdateEvent(ctx context.Context, id uint, event *eventTypes.EventUpsertPayload) error {
-	var updatedEvent = entities.Events{
-		Name:        event.Name,
-		Date:        event.Date,
-		Description: event.Description,
-		Pax:         event.Pax,
+	var existingEvent entities.Events
+
+	// Fetch the existing event
+	result := store.db.WithContext(ctx).First(&existingEvent, id)
+	if result.Error != nil {
+		return result.Error
 	}
 
-	result := store.db.WithContext(ctx).Model(&updatedEvent).Where("id = ?", id).Updates(&updatedEvent)
+	// Update the fields
+	existingEvent.Name = event.Name
+	existingEvent.Date = event.Date
+	existingEvent.Description = event.Description
+	existingEvent.Pax = event.Pax
+
+	// Save the updated event
+	result = store.db.WithContext(ctx).Save(&existingEvent)
 
 	return result.Error
 }
