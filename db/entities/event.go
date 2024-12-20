@@ -17,6 +17,6 @@ type Events struct {
 
 type EventSignUps struct {
 	gorm.Model
-	UserID  uint
-	EventID uint
+	UserID  uint `gorm:"uniqueIndex:idx_event_to_user"`
+	EventID uint `gorm:"uniqueIndex:idx_event_to_user"`
 }

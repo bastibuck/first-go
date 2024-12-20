@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type EventHandler struct {
@@ -157,6 +159,11 @@ func (eventHandler *EventHandler) SignUp(res http.ResponseWriter, req *http.Requ
 	})
 	if err != nil {
 		fmt.Println(err)
+
+		if err == gorm.ErrDuplicatedKey {
+			http.Error(res, "User already signed up for this event", http.StatusBadRequest)
+			return
+		}
 
 		if err.Error() == "event-fully-booked" {
 			http.Error(res, "Event is full", http.StatusConflict)

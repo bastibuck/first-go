@@ -6,6 +6,6 @@ import (
 
 type Users struct {
 	gorm.Model
-	Email         string
+	Email         string `gorm:"uniqueIndex"`
 	Password_Hash string
 }
