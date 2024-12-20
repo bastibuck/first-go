@@ -17,6 +17,7 @@ func SetupEventRoutes(eventHandler *api.EventHandler, eventStore db.EventStore) 
 
 	// protected routes
 	router.With(middleware.UserAuthentication).Post("/", eventHandler.Create)
+	router.With(middleware.UserAuthentication).With(middleware.EventExistence(eventStore)).Post("/{id}/sign-up", eventHandler.SignUp)
 	router.With(middleware.UserAuthentication).With(middleware.EventExistence(eventStore)).With(middleware.UserEvent(eventStore)).Put("/{id}", eventHandler.Update)
 	router.With(middleware.UserAuthentication).With(middleware.EventExistence(eventStore)).With(middleware.UserEvent(eventStore)).Delete("/{id}", eventHandler.DeleteById)
 

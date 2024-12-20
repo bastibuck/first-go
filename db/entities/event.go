@@ -16,3 +16,10 @@ type Events struct {
 	UpdatedAt   time.Time
 	Pax         int
 }
+
+type EventSignUps struct {
+	gorm.Model
+	Email   string
+	Name    string
+	EventID uint
+}

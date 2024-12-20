@@ -40,7 +40,7 @@ func (eventHandler *EventHandler) GetById(res http.ResponseWriter, req *http.Req
 
 	eventId, _ := utils.ExtractEventID(res, req) // already validated in middleware
 
-	cachedEvent := cache.Get(fmt.Sprintf("event-%d", eventId))
+	cachedEvent := cache.Get(buildEventCacheKey(eventId))
 	if cachedEvent != nil {
 		json.NewEncoder(res).Encode(cachedEvent)
 		return
@@ -55,13 +55,13 @@ func (eventHandler *EventHandler) GetById(res http.ResponseWriter, req *http.Req
 		return
 	}
 
-	cache.Set(fmt.Sprintf("event-%d", eventId), event, time.Now().Add(time.Second*30))
+	cache.Set(buildEventCacheKey(eventId), event, time.Now().Add(time.Second*30))
 
 	json.NewEncoder(res).Encode(event)
 }
 
 func (eventHandler *EventHandler) Create(res http.ResponseWriter, req *http.Request) {
-	var createEvent eventTypes.EventPayloadUpsert
+	var createEvent eventTypes.EventUpsertPayload
 
 	ctx := req.Context()
 
@@ -93,7 +93,7 @@ func (eventHandler *EventHandler) Create(res http.ResponseWriter, req *http.Requ
 }
 
 func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Request) {
-	var updateEvent eventTypes.EventPayloadUpsert
+	var updateEvent eventTypes.EventUpsertPayload
 
 	ctx := req.Context()
 
@@ -121,7 +121,7 @@ func (eventHandler *EventHandler) Update(res http.ResponseWriter, req *http.Requ
 		return
 	}
 
-	cache.Invalidate(fmt.Sprintf("event-%d", eventId))
+	cache.Invalidate(buildEventCacheKey(eventId))
 
 	res.WriteHeader(http.StatusNoContent)
 }
@@ -138,7 +138,51 @@ func (eventHandler *EventHandler) DeleteById(res http.ResponseWriter, req *http.
 		return
 	}
 
-	cache.Invalidate(fmt.Sprintf("event-%d", eventId))
+	cache.Invalidate(buildEventCacheKey(eventId))
 
 	res.WriteHeader(http.StatusNoContent)
+}
+
+func (eventHandler *EventHandler) SignUp(res http.ResponseWriter, req *http.Request) {
+	var signUp eventTypes.EventSignUpPayload
+
+	ctx := req.Context()
+
+	eventId, _ := utils.ExtractEventID(res, req) // already validated in middleware
+
+	err := json.NewDecoder(req.Body).Decode(&signUp)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(res, "Something went wrong in Events/SignUp", http.StatusInternalServerError)
+		return
+	}
+
+	validate := utils.GetValidator()
+	err = validate.Struct(signUp)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(res, "Malformed sign-up", http.StatusBadRequest)
+		return
+	}
+
+	err = eventHandler.eventStore.SignUp(ctx, eventId, &signUp)
+	if err != nil {
+		fmt.Println(err)
+
+		if err.Error() == "event-fully-booked" {
+			http.Error(res, "Event is full", http.StatusConflict)
+			return
+		}
+
+		http.Error(res, "Something went wrong in Events/SignUp", http.StatusInternalServerError)
+		return
+	}
+
+	cache.Invalidate(buildEventCacheKey(eventId))
+
+	res.WriteHeader(http.StatusCreated)
+}
+
+func buildEventCacheKey(eventId uint) string {
+	return fmt.Sprintf("event-%d", eventId)
 }

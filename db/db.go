@@ -16,7 +16,7 @@ func OpenConnection() *gorm.DB {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&entities.Users{}, &entities.Events{})
+	db.AutoMigrate(&entities.Users{}, &entities.Events{}, &entities.EventSignUps{})
 
 	log.Println("Database connection established and tables prepared")
 

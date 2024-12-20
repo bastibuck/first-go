@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"first-go/db/entities"
@@ -14,9 +15,10 @@ import (
 type EventStore interface {
 	GetAll(ctx context.Context) ([]eventTypes.EventResponse, error)
 	GetById(ctx context.Context, id uint) (*eventTypes.EventResponse, error)
-	AddEvent(ctx context.Context, event *eventTypes.EventPayloadUpsert, userID uint) error
-	UpdateEvent(ctx context.Context, id uint, event *eventTypes.EventPayloadUpsert) error
+	AddEvent(ctx context.Context, event *eventTypes.EventUpsertPayload, userID uint) error
+	UpdateEvent(ctx context.Context, id uint, event *eventTypes.EventUpsertPayload) error
 	DeleteById(ctx context.Context, id uint) error
+	SignUp(ctx context.Context, eventId uint, signUp *eventTypes.EventSignUpPayload) error
 }
 
 type DatabaseEventStore struct {
@@ -120,7 +122,7 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTy
 	return &event, nil
 }
 
-func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *eventTypes.EventPayloadUpsert, userID uint) error {
+func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *eventTypes.EventUpsertPayload, userID uint) error {
 	var newEvent = entities.Events{
 		Name:        event.Name,
 		Date:        event.Date,
@@ -134,7 +136,7 @@ func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *eventTypes
 	return result.Error
 }
 
-func (store *DatabaseEventStore) UpdateEvent(ctx context.Context, id uint, event *eventTypes.EventPayloadUpsert) error {
+func (store *DatabaseEventStore) UpdateEvent(ctx context.Context, id uint, event *eventTypes.EventUpsertPayload) error {
 	var updatedEvent = entities.Events{
 		Name:        event.Name,
 		Date:        event.Date,
@@ -151,6 +153,40 @@ func (store *DatabaseEventStore) DeleteById(ctx context.Context, id uint) error 
 	var event entities.Events
 
 	result := store.db.WithContext(ctx).Where("id = ?", id).Unscoped().Delete(&event)
+
+	return result.Error
+}
+
+func (store *DatabaseEventStore) SignUp(ctx context.Context, eventId uint, signUp *eventTypes.EventSignUpPayload) error {
+	var newSignUp = entities.EventSignUps{
+		Email:   signUp.Email,
+		Name:    signUp.Name,
+		EventID: eventId,
+	}
+
+	event, err := store.GetById(ctx, eventId)
+	if err != nil {
+		return err
+	}
+
+	if event.Pax <= 0 {
+		return fmt.Errorf("event-fully-booked")
+	}
+
+	event.Pax--
+
+	err = store.UpdateEvent(ctx, eventId, &eventTypes.EventUpsertPayload{
+		Name:        event.Name,
+		Date:        event.Date,
+		Description: event.Description,
+		Pax:         event.Pax,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	result := store.db.WithContext(ctx).Create(&newSignUp)
 
 	return result.Error
 }
