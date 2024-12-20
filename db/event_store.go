@@ -43,12 +43,13 @@ func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]eventTypes.Event
 		Name        string    `json:"name"`
 		Date        time.Time `json:"date"`
 		Description string    `json:"description"`
+		Pax         int       `json:"pax"`
 		UserID      uint      `json:"user_id"`
 		UserEmail   string    `json:"user_email"`
 	}
 
 	result := store.db.WithContext(ctx).Raw(`
-		SELECT e.id, e.name, e.date, e.description, u.id as user_id, u.email as user_email
+		SELECT e.id, e.name, e.date, e.description, e.pax, u.id as user_id, u.email as user_email
 		FROM events e
 		JOIN users u ON e.user_id = u.id
 		ORDER BY e.date DESC
@@ -66,6 +67,7 @@ func (store *DatabaseEventStore) GetAll(ctx context.Context) ([]eventTypes.Event
 			Name:        eventsResult[event].Name,
 			Date:        eventsResult[event].Date,
 			Description: eventsResult[event].Description,
+			Pax:         eventsResult[event].Pax,
 			User: userTypes.User{
 				ID:    eventsResult[event].UserID,
 				Email: eventsResult[event].UserEmail,
@@ -82,12 +84,13 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTy
 		Name        string    `json:"name"`
 		Date        time.Time `json:"date"`
 		Description string    `json:"description"`
+		Pax         int       `json:"pax"`
 		UserID      uint      `json:"user_id"`
 		UserEmail   string    `json:"user_email"`
 	}
 
 	result := store.db.WithContext(ctx).Raw(`
-		SELECT e.id, e.name, e.date, e.description, u.id as user_id, u.email as user_email
+		SELECT e.id, e.name, e.date, e.description, e.pax, u.id as user_id, u.email as user_email
 		FROM events e
 		JOIN users u ON e.user_id = u.id
 		ORDER BY e.date DESC
@@ -98,11 +101,16 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTy
 		return nil, result.Error
 	}
 
+	if result.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
 	event := eventTypes.EventResponse{
 		ID:          eventsResult.ID,
 		Name:        eventsResult.Name,
 		Description: eventsResult.Description,
 		Date:        eventsResult.Date,
+		Pax:         eventsResult.Pax,
 		User: userTypes.User{
 			ID:    eventsResult.UserID,
 			Email: eventsResult.UserEmail,
@@ -118,6 +126,7 @@ func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *eventTypes
 		Date:        event.Date,
 		Description: event.Description,
 		UserID:      userID,
+		Pax:         event.Pax,
 	}
 
 	result := store.db.WithContext(ctx).Create(&newEvent)
@@ -130,6 +139,7 @@ func (store *DatabaseEventStore) UpdateEvent(ctx context.Context, id uint, event
 		Name:        event.Name,
 		Date:        event.Date,
 		Description: event.Description,
+		Pax:         event.Pax,
 	}
 
 	result := store.db.WithContext(ctx).Model(&updatedEvent).Where("id = ?", id).Updates(&updatedEvent)

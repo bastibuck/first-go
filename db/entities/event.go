@@ -14,4 +14,5 @@ type Events struct {
 	UserID      uint
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	Pax         int
 }
