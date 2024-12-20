@@ -86,13 +86,8 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTy
 		UserEmail   string    `json:"user_email"`
 	}
 
-	result := store.db.WithContext(ctx).Raw(`
-		SELECT e.id, e.name, e.date, e.description, e.pax, u.id as user_id, u.email as user_email
-		FROM events e
-		JOIN users u ON e.user_id = u.id
-		WHERE e.id = ?
-	`, id).Scan(&eventsResult)
-
+	event := entities.Events{Model: gorm.Model{ID: id}}
+	result := store.db.WithContext(ctx).Model(&event).Select("events.id, events.name, events.date, events.description, events.pax, users.id as user_id, users.email as user_email").Joins("join users on events.user_id = users.id").Scan(&eventsResult)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -116,7 +111,7 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTy
 		signupsResponse = append(signupsResponse, signup.Email)
 	}
 
-	event := eventTypes.EventResponse{
+	eventResponse := eventTypes.EventResponse{
 		ID:          eventsResult.ID,
 		Name:        eventsResult.Name,
 		Description: eventsResult.Description,
@@ -129,7 +124,7 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTy
 		SignUps: signupsResponse,
 	}
 
-	return &event, nil
+	return &eventResponse, nil
 }
 
 func (store *DatabaseEventStore) AddEvent(ctx context.Context, event *eventTypes.EventUpsertPayload, userID uint) error {
