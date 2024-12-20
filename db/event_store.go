@@ -105,12 +105,7 @@ func (store *DatabaseEventStore) GetById(ctx context.Context, id uint) (*eventTy
 		Email string `json:"email"`
 	}
 
-	result = store.db.WithContext(ctx).Raw(`
-		SELECT users.email
-		FROM event_sign_ups
-		JOIN users ON event_sign_ups.user_id = users.id
-		WHERE event_sign_ups.event_id = ?
-	`, id).Scan(&signupsResult)
+	result = store.db.WithContext(ctx).Model(&entities.EventSignUps{}).Where("event_sign_ups.event_id = ?", id).Select("users.email").Joins("join users on event_sign_ups.user_id = users.id").Scan(&signupsResult)
 	if result.Error != nil {
 		return nil, result.Error
 	}
