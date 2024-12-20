@@ -87,7 +87,7 @@ func (userHandler *UserHandler) LoginUser(res http.ResponseWriter, req *http.Req
 	err := validate.Struct(loginParams)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(res, "Invalid request body", http.StatusBadRequest)
+		http.Error(res, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 

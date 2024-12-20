@@ -88,6 +88,12 @@ func (eventHandler *EventHandler) Create(res http.ResponseWriter, req *http.Requ
 	err = eventHandler.eventStore.AddEvent(ctx, &createEvent, user.ID)
 	if err != nil {
 		fmt.Println(err)
+
+		if err == gorm.ErrDuplicatedKey {
+			http.Error(res, "Event with this name already exists", http.StatusConflict)
+			return
+		}
+
 		http.Error(res, "Something went wrong in Events/Create", http.StatusInternalServerError)
 		return
 	}
@@ -161,7 +167,7 @@ func (eventHandler *EventHandler) SignUp(res http.ResponseWriter, req *http.Requ
 		fmt.Println(err)
 
 		if err == gorm.ErrDuplicatedKey {
-			http.Error(res, "User already signed up for this event", http.StatusBadRequest)
+			http.Error(res, "User already signed up for this event", http.StatusConflict)
 			return
 		}
 

@@ -35,11 +35,9 @@ func (store *DatabaseUserStore) Create(ctx context.Context, user *userTypes.User
 }
 
 func (store *DatabaseUserStore) GetByEmail(ctx context.Context, email string) (*userTypes.User, error) {
-	var user = entities.Users{
-		Email: email,
-	}
+	var user entities.Users
 
-	result := store.db.WithContext(ctx).First(&user)
+	result := store.db.WithContext(ctx).Where("email = ?", email).First(&user)
 
 	if result.Error != nil {
 		return nil, result.Error

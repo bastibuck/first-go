@@ -8,7 +8,7 @@ import (
 
 type Events struct {
 	gorm.Model
-	Name        string
+	Name        string `gorm:"uniqueIndex"`
 	Description string
 	Date        time.Time
 	UserID      uint

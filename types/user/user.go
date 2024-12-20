@@ -40,7 +40,7 @@ func CreateToken(user User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":    user.ID,
 		"email": user.Email,
-		"exp":   time.Now().Add(time.Hour * 4).Unix(), // TODO! does this work without manually checking?
+		"exp":   time.Now().Add(time.Hour * 4).Unix(),
 	}, nil)
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
